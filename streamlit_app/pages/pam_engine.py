@@ -8,13 +8,25 @@ def render():
     st.title("PAM Engine")
     st.caption("Deterministic Price Action & Momentum analysis (Piranha Profits methodology)")
 
-    col1, col2 = st.columns([3, 1])
+    from core.config.watchlist import get_all_ticker_symbols, get_ticker_display_name
+
+    all_symbols = get_all_ticker_symbols()
+
+    col1, col2, col3 = st.columns([2, 2, 1])
     with col1:
-        ticker = st.text_input("Ticker Symbol", value="AAPL", placeholder="e.g., NVDA, AAPL, MSFT").strip().upper()
+        selected = st.selectbox(
+            "Select from watchlist",
+            options=[""] + all_symbols,
+            format_func=lambda x: f"{x} — {get_ticker_display_name(x)}" if x else "Choose a ticker...",
+        )
     with col2:
+        manual = st.text_input("Or type manually", placeholder="e.g., NVDA, MC.PA, BTC-USD")
+    with col3:
         st.markdown("")
         st.markdown("")
-        run_btn = st.button("Run PAM Analysis", type="primary", use_container_width=True)
+        run_btn = st.button("Run PAM", type="primary", use_container_width=True)
+
+    ticker = (manual.strip().upper() if manual.strip() else selected).strip()
 
     if run_btn and ticker:
         _run_pam(ticker)

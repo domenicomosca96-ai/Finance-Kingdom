@@ -38,6 +38,14 @@ def render():
         else:
             st.info("No analyses yet. Go to **Analysis** to run your first watchlist scan.")
 
+        st.subheader("Watchlist Overview")
+        from core.config.watchlist import WATCHLIST
+        for cat, tickers in WATCHLIST.items():
+            with st.expander(f"{cat} ({len(tickers)} tickers)"):
+                cols = st.columns(4)
+                for i, (sym, name) in enumerate(tickers.items()):
+                    cols[i % 4].markdown(f"`{sym}` {name}")
+
     with right:
         st.subheader("Knowledge Base")
         if kb_stats.get("collections"):

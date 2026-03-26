@@ -10,13 +10,46 @@ def render():
     st.title("Analysis")
     st.caption("Full AI-powered investment analysis — Gemini 3 + PAM Engine + Knowledge Base")
 
-    # ── Input ──
-    tickers_input = st.text_input(
-        "Watchlist Tickers",
-        value="NVDA, AAPL",
-        placeholder="Comma-separated: NVDA, AAPL, MSFT, META",
+    from core.config.watchlist import WATCHLIST, CATEGORIES
+
+    # ── Watchlist selector ──
+    st.subheader("Select Tickers")
+
+    # Category filter
+    selected_cats = st.multiselect(
+        "Filter by category",
+        CATEGORIES,
+        default=[],
+        placeholder="All categories",
     )
-    tickers = [t.strip().upper() for t in tickers_input.split(",") if t.strip()]
+
+    # Build ticker options
+    available = {}
+    cats_to_show = selected_cats if selected_cats else CATEGORIES
+    for cat in cats_to_show:
+        for symbol, name in WATCHLIST.get(cat, {}).items():
+            available[symbol] = f"{symbol} — {name}"
+
+    # Multi-select from watchlist
+    selected_tickers = st.multiselect(
+        "Choose from your watchlist",
+        options=list(available.keys()),
+        format_func=lambda x: available.get(x, x),
+        placeholder="Click to select tickers...",
+    )
+
+    # Manual input fallback
+    manual_input = st.text_input(
+        "Or type tickers manually",
+        placeholder="Comma-separated: NVDA, AAPL, BTC-USD",
+    )
+    manual_tickers = [t.strip().upper() for t in manual_input.split(",") if t.strip()] if manual_input else []
+
+    # Combine
+    tickers = list(dict.fromkeys(selected_tickers + manual_tickers))  # deduplicate, preserve order
+
+    if tickers:
+        st.info(f"**{len(tickers)} tickers selected:** {', '.join(tickers)}")
 
     col1, col2 = st.columns([1, 4])
     with col1:
