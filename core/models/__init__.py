@@ -179,6 +179,7 @@ class TradeIdea(Base):
     probability_pct = Column(Float, default=50.0)
 
     direction = Column(String(10), default="neutral")
+    trade_type = Column(String(10), default="stock")  # stock, options, both
     actionable = Column(Boolean, default=False)
     thesis = Column(Text)
     swing_plan = Column(Text)
