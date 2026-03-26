@@ -74,10 +74,9 @@ st.markdown("""
     /* Table styling */
     .dataframe { font-size: 0.85rem; }
 
-    /* Hide Streamlit branding */
+    /* Hide Streamlit branding but keep header for sidebar toggle */
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
-    header {visibility: hidden;}
 </style>
 """, unsafe_allow_html=True)
 

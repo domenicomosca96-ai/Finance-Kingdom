@@ -17,31 +17,44 @@ from core.config import settings
 
 CONTEXT_BUILDER_PROMPT = """You are the Context Builder for AlphaEdge, an AI swing trading system.
 
-Your job: ORGANIZE the raw inputs into a clean analytical brief for the Analyst.
+Your job: THOROUGHLY SYNTHESIZE all raw inputs into a comprehensive analytical brief for the Analyst.
+
+CRITICAL: You must reflect on EVERY piece of knowledge provided. The knowledge base contains
+carefully curated material including the Howell Global Liquidity framework, PAM structures,
+accumulation/distribution rotation cycles, options strategies (Bang Van matrix), and sector research.
+DO NOT skip or summarize lightly — extract ALL relevant insights from EVERY document.
 
 You receive:
-1. RETRIEVED DOCUMENTS from the knowledge base (macro, trading methods, sector reports)
+1. RETRIEVED DOCUMENTS from the knowledge base (macro, Howell framework, trading methods, PAM patterns, sector reports)
 2. PRE-COMPUTED PAM ENGINE DATA (deterministic — treat as ground truth)
 3. LIVE MARKET DATA (prices, fundamentals)
 
 Your output must be a structured context brief with these sections:
 
-## MACRO REGIME
-Synthesize the macro/liquidity documents. Identify:
+## MACRO REGIME (Howell Framework)
+Synthesize ALL macro/liquidity documents. Apply the Howell Global Liquidity framework:
 - Current Howell liquidity phase (Rebound/Calm/Speculation/Turbulence)
-- Fed Net Liquidity direction
+- Global Liquidity Index (GLI) direction and magnitude
+- Fed Net Liquidity direction, TGA, RRP dynamics
 - DXY, MOVE Index, yield curve positioning
-- Net assessment for risk assets
+- Cross-border capital flows
+- Net assessment for risk assets with specific Howell phase implications
 
 ## SECTOR/THEME CONTEXT
-For each ticker, extract relevant sector intelligence from the documents:
+For each ticker, extract ALL relevant intelligence from the documents:
 - AI value chain position, capex cycle, earnings catalysts
-- Any specific fundamental insights
+- Sector rotation implications
+- Any specific fundamental insights from uploaded research
 
 ## PAM ENGINE SUMMARY
 Restate the pre-computed PAM data clearly. DO NOT reinterpret it.
 The PAM engine has already computed: flow state, pattern, momentum, micro score.
-Simply confirm and contextualize.
+Contextualize within the accumulation/distribution rotation framework (segments A/B/C/D).
+
+## METHODOLOGY APPLICATION
+Reference specific principles from the trading methodology documents:
+- Which PAM patterns apply and how the methodology recommends trading them
+- How the current rotation segment affects position sizing and direction
 
 ## KEY RISKS
 List the top 3-5 risks visible from the documents.
@@ -75,13 +88,21 @@ For each ticker, output:
 5. SWING PLAN: If the PAM engine detected a pattern, specify:
    - Entry zone, Stop loss, Target, Timeframe
 
-6. INVALIDATION: What breaks this thesis?
+6. TRADE TYPE: Decide between "stock" and "options" (or both):
+   - Default to "stock" (direct equity position) for most trades
+   - Recommend "options" ONLY when confidence is HIGH (probability >= 72%) AND
+     the setup has clear defined risk (pattern confirmed, good R:R)
+   - If both make sense, set trade_type to "both" and explain the options angle
+   - Options boost returns on high-conviction setups; stocks are the base case
 
-7. CATALYSTS: Key dates/events.
+7. INVALIDATION: What breaks this thesis?
+
+8. CATALYSTS: Key dates/events.
 
 Output STRICTLY as JSON array:
 [{"ticker": "NVDA", "macro_score": 75, "theme_score": 88, "pam_score": 72,
-  "thesis": "...", "direction": "long", "swing_plan": "...",
+  "thesis": "...", "direction": "long", "trade_type": "stock",
+  "swing_plan": "Entry at $130, stop $124, target $145. 2-4 week swing.",
   "entry_price": 130.50, "stop_loss": 124.00, "target_price": 145.00,
   "invalidation": "...", "catalysts": ["Earnings May 28"]}]
 
@@ -90,6 +111,7 @@ RULES:
 - If data is insufficient, default to 50
 - Use PAM engine data as primary for entry/stop/target
 - If no PAM pattern, set direction to "neutral"
+- trade_type must be one of: "stock", "options", "both"
 - Return ONLY valid JSON, no markdown fences
 """
 
@@ -120,7 +142,8 @@ Required output format:
   "analyses": [
     {
       "ticker": "NVDA", "raw_macro": 75, "raw_theme": 88, "raw_pam": 72,
-      "direction": "long", "thesis": "...", "swing_plan": "...",
+      "direction": "long", "trade_type": "stock",
+      "thesis": "...", "swing_plan": "...",
       "entry_price": 130.50, "stop_loss": 124.00, "target_price": 145.00,
       "invalidation": "...", "catalysts": ["..."], "critic_notes": "..."
     }
@@ -130,6 +153,7 @@ Required output format:
 RULES:
 - All number fields must be actual numbers (not strings)
 - direction is one of: "long", "short", "neutral"
+- trade_type is one of: "stock", "options", "both" (default "stock")
 - catalysts is always an array
 - Remove any markdown formatting
 - Return ONLY the JSON object
@@ -181,7 +205,7 @@ def run_chain(
         f"=== PAM ENGINE OUTPUT (DETERMINISTIC) ===\n{pam_context}\n\n"
         f"=== LIVE MARKET DATA ===\n{live_data}\n"
     )
-    context_brief = _call_llm(CONTEXT_BUILDER_PROMPT, context_input, temperature=0.2, max_tokens=3000)
+    context_brief = _call_llm(CONTEXT_BUILDER_PROMPT, context_input, temperature=0.2, max_tokens=6000)
 
     # Step B: Analyst
     analyst_input = (
@@ -189,7 +213,7 @@ def run_chain(
         f"=== CONTEXT BRIEF ===\n{context_brief}\n\n"
         f"=== PAM ENGINE SCORES ===\n{pam_context}\n"
     )
-    analyst_output = _call_llm(ANALYST_PROMPT, analyst_input, temperature=0.3, max_tokens=4000)
+    analyst_output = _call_llm(ANALYST_PROMPT, analyst_input, temperature=0.3, max_tokens=6000)
 
     # Step C: Critic
     critic_input = (

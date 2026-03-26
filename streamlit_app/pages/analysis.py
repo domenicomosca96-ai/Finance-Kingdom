@@ -128,11 +128,11 @@ def _retrieve_docs(tickers: list[str]) -> str:
     try:
         from core.models.database import SessionLocal
         from streamlit_app.services.retrieval import multi_collection_retrieve, format_retrieved_docs
-        collections = ["macro_liquidity", "trading_methods", "pam_structures", "tech_reports"]
-        query = f"Swing trading analysis for {', '.join(tickers)}. Macro liquidity, PAM patterns, options strategies."
+        collections = ["macro_liquidity", "trading_methods", "pam_structures", "tech_reports", "watchlist_setups"]
+        query = f"Swing trading analysis for {', '.join(tickers)}. Macro liquidity regime, Howell framework, PAM patterns, options strategies, accumulation distribution rotation."
 
         with SessionLocal() as db:
-            docs = multi_collection_retrieve(db, query, collections, k_per_collection=4)
+            docs = multi_collection_retrieve(db, query, collections, k_per_collection=8)
             formatted = format_retrieved_docs(docs)
             if formatted.strip():
                 return formatted
@@ -174,8 +174,12 @@ def _enrich_analyses(analyses: list[dict], pam_results: dict) -> list[dict]:
 
         sizing = compute_sizing(score.probability_pct, entry, stop, target)
 
+        # Determine trade type: stock, options, or both
+        trade_type = a.get("trade_type", "stock")
+        # Only compute options if trade_type includes options OR high conviction
         opts = None
-        if pam:
+        include_options = trade_type in ("options", "both") or score.probability_pct >= 72
+        if pam and include_options:
             opts = select_strategy(
                 pam.pattern, pam.flow, pam.momentum, pam.current_price,
                 rsi=pam.rsi_14, iv_rank=pam.iv_rank,
@@ -184,6 +188,7 @@ def _enrich_analyses(analyses: list[dict], pam_results: dict) -> list[dict]:
 
         enriched.append({
             **a,
+            "trade_type": trade_type if not include_options or trade_type != "stock" else ("both" if opts else "stock"),
             "raw_macro": score.raw_macro,
             "raw_theme": score.raw_theme,
             "raw_pam": score.raw_pam,
@@ -233,6 +238,7 @@ def _store_ideas(analyses: list[dict], chain_result: dict):
                     job_id=job_id,
                     ticker=a.get("ticker", ""),
                     dt=date.today(),
+                    trade_type=a.get("trade_type", "stock"),
                     raw_macro=a.get("raw_macro", 50),
                     raw_theme=a.get("raw_theme", 50),
                     raw_pam=a.get("raw_pam", 50),
@@ -291,20 +297,25 @@ def _render_analysis_card(a: dict):
     tier_colors = {"high": "green", "medium": "orange", "low": "red", "no_trade": "red"}
     color = tier_colors.get(tier, "gray")
 
-    with st.expander(f"{ticker} — {direction} — {prob:.1f}% ({tier.upper()})", expanded=True):
+    trade_type = a.get("trade_type", "stock").upper()
+    type_label = {"STOCK": "Equity", "OPTIONS": "Options", "BOTH": "Equity + Options"}.get(trade_type, trade_type)
+
+    with st.expander(f"{ticker} — {direction} — {prob:.1f}% ({tier.upper()}) — {type_label}", expanded=True):
         # Score row
-        s1, s2, s3, s4 = st.columns(4)
+        s1, s2, s3, s4, s5 = st.columns(5)
         s1.metric("Probability", f"{prob:.1f}%")
         s2.metric("Macro", f"{a.get('raw_macro', 50):.0f}")
         s3.metric("Theme", f"{a.get('raw_theme', 50):.0f}")
         s4.metric("PAM", f"{a.get('raw_pam', 50):.0f}")
+        s5.metric("Trade Type", type_label)
 
         # Thesis
         if a.get("thesis"):
             st.markdown(f"**Thesis:** {a['thesis']}")
 
-        # Trade plan
+        # Stock/Equity Trade Plan
         if a.get("entry_price") or a.get("stop_loss") or a.get("target_price"):
+            st.subheader("Stock Trade Plan")
             t1, t2, t3 = st.columns(3)
             t1.metric("Entry", f"${a['entry_price']:.2f}" if a.get("entry_price") else "N/A")
             t2.metric("Stop", f"${a['stop_loss']:.2f}" if a.get("stop_loss") else "N/A")
@@ -313,10 +324,10 @@ def _render_analysis_card(a: dict):
         if a.get("swing_plan"):
             st.markdown(f"**Swing Plan:** {a['swing_plan']}")
 
-        # Options
+        # Options (only if trade type includes options)
         opts = a.get("options")
         if opts and opts.get("strategy_name"):
-            st.subheader(f"Options: {opts['strategy_name']} ({opts.get('strategy_code', '')})")
+            st.subheader(f"Options Enhancement: {opts['strategy_name']} ({opts.get('strategy_code', '')})")
 
             o1, o2, o3 = st.columns(3)
             o1.metric("Max Profit", opts.get("max_profit", "N/A"))

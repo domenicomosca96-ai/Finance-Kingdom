@@ -7,19 +7,129 @@ def render():
     st.title("Settings & Admin")
     st.caption("System diagnostics, connectivity tests, and environment validation")
 
-    tab1, tab2, tab3 = st.tabs(["Connectivity", "Environment", "Database"])
+    tab1, tab2, tab3, tab4 = st.tabs(["Connectivity", "Signal Weighting", "Environment", "Database"])
 
     with tab1:
         _render_connectivity()
 
     with tab2:
-        _render_environment()
+        _render_signal_weighting()
 
     with tab3:
+        _render_environment()
+
+    with tab4:
         _render_database()
 
 
-def _render_connectivity():
+def _render_signal_weighting():
+    st.subheader("How AlphaEdge Weights Signals")
+
+    from core.config import settings
+
+    st.markdown("""
+**AlphaEdge uses a 3-pillar scoring model to compute trade probability:**
+
+Each trade idea receives three independent scores (0-100), which are then combined
+using configurable weights and mapped through a logistic (sigmoid) function to produce
+a final probability percentage.
+""")
+
+    st.markdown("### Current Weights")
+    w1, w2, w3 = st.columns(3)
+    w1.metric("Macro (Howell/Liquidity)", f"{settings.W_MACRO * 100:.0f}%")
+    w2.metric("Theme (Sector/Catalysts)", f"{settings.W_THEME * 100:.0f}%")
+    w3.metric("PAM (Price Action)", f"{settings.W_PAM * 100:.0f}%")
+
+    st.markdown(f"""
+### Scoring Pipeline
+
+1. **Macro Score** (weight: {settings.W_MACRO}) — Gemini AI evaluates global liquidity regime
+   using the Howell framework (GLI direction, Fed net liquidity, DXY, MOVE index).
+   High score = strong liquidity tailwind for risk assets.
+
+2. **Theme Score** (weight: {settings.W_THEME}) — Gemini AI evaluates sector-specific catalysts,
+   earnings momentum, AI capex cycle positioning, and competitive dynamics.
+   High score = strong sector/thematic support.
+
+3. **PAM Score** (weight: {settings.W_PAM}) — Deterministic engine (no AI) computes price action:
+   flow state, momentum, pattern detection (UC1/UR2/DR2/DC1), rotation segment (A/B/C/D).
+   This is the most heavily weighted because price doesn't lie.
+
+### Formula
+
+```
+composite = (Macro x {settings.W_MACRO}) + (Theme x {settings.W_THEME}) + (PAM x {settings.W_PAM})
+probability = 100 / (1 + exp(-{settings.LOGISTIC_K} * (composite - {settings.LOGISTIC_C})))
+```
+
+### Confidence Tiers
+| Tier | Probability | Action |
+|------|------------|--------|
+| **HIGH** | >= 72% | Full position, options eligible |
+| **MEDIUM** | >= 58% | Reduced position, stock only |
+| **LOW** | >= 45% | Watchlist only |
+| **NO TRADE** | < 45% | Skip |
+
+### Trade Type Logic
+- **Stock** (equity): Default for all trades. Entry/stop/target from PAM engine.
+- **Options**: Only suggested when probability >= 72% AND confirmed pattern with good R:R.
+  Options amplify returns on high-conviction setups (Bang Van matrix selects strategy).
+- **Both**: Stock + options overlay for highest conviction trades.
+
+### Customizing Weights
+You can adjust the weights via environment variables or Streamlit secrets:
+- `W_MACRO` (default: {settings.W_MACRO})
+- `W_THEME` (default: {settings.W_THEME})
+- `W_PAM` (default: {settings.W_PAM})
+- `LOGISTIC_K` (steepness, default: {settings.LOGISTIC_K})
+- `LOGISTIC_C` (midpoint, default: {settings.LOGISTIC_C})
+
+Higher `W_PAM` = more weight on price action (recommended for swing trading).
+Higher `W_MACRO` = more weight on Howell liquidity conditions.
+""")
+
+    st.divider()
+    st.subheader("Interactive Weight Tester")
+    with st.form("weight_test"):
+        wc1, wc2, wc3 = st.columns(3)
+        with wc1:
+            tw_macro = st.slider("Macro Weight", 0.0, 1.0, settings.W_MACRO, 0.05)
+        with wc2:
+            tw_theme = st.slider("Theme Weight", 0.0, 1.0, settings.W_THEME, 0.05)
+        with wc3:
+            tw_pam = st.slider("PAM Weight", 0.0, 1.0, settings.W_PAM, 0.05)
+
+        sc1, sc2, sc3 = st.columns(3)
+        with sc1:
+            test_macro = st.number_input("Test Macro Score", 0.0, 100.0, 65.0)
+        with sc2:
+            test_theme = st.number_input("Test Theme Score", 0.0, 100.0, 70.0)
+        with sc3:
+            test_pam = st.number_input("Test PAM Score", 0.0, 100.0, 75.0)
+
+        if st.form_submit_button("Calculate"):
+            import math
+            total_w = tw_macro + tw_theme + tw_pam
+            if total_w == 0:
+                st.error("Weights cannot all be zero.")
+            else:
+                # Normalize weights
+                nw_macro = tw_macro / total_w
+                nw_theme = tw_theme / total_w
+                nw_pam = tw_pam / total_w
+                composite = test_macro * nw_macro + test_theme * nw_theme + test_pam * nw_pam
+                prob = 100.0 / (1.0 + math.exp(-settings.LOGISTIC_K * (composite - settings.LOGISTIC_C)))
+
+                r1, r2, r3 = st.columns(3)
+                r1.metric("Composite", f"{composite:.1f}")
+                r2.metric("Probability", f"{prob:.1f}%")
+                tier = "HIGH" if prob >= 72 else "MEDIUM" if prob >= 58 else "LOW" if prob >= 45 else "NO TRADE"
+                r3.metric("Tier", tier)
+                st.info(f"Normalized weights: Macro={nw_macro:.2f}, Theme={nw_theme:.2f}, PAM={nw_pam:.2f}")
+
+
+
     st.subheader("Connectivity Tests")
 
     col1, col2 = st.columns(2)
