@@ -48,26 +48,44 @@ def render():
     # Combine
     tickers = list(dict.fromkeys(selected_tickers + manual_tickers))  # deduplicate, preserve order
 
+    # Timeframe selector
+    st.subheader("Investment Timeframe")
+    tf_col1, tf_col2 = st.columns(2)
+    with tf_col1:
+        timeframe = st.selectbox(
+            "Timeframe",
+            ["Swing Trade (1-4 weeks)", "Position Trade (1-3 months)", "Medium Term (3-12 months)", "Long Term (1+ year)"],
+            index=0,
+        )
+    with tf_col2:
+        st.markdown(f"""
+        **Selected:** {timeframe}
+        - Swing: PAM patterns, tight stops, momentum-driven
+        - Position: Sector rotation, wider stops, regime-aligned
+        - Medium: Macro regime, duration buckets, fundamental filter
+        - Long: Strategic allocation, Howell liquidity cycles
+        """)
+
     if tickers:
-        st.info(f"**{len(tickers)} tickers selected:** {', '.join(tickers)}")
+        st.info(f"**{len(tickers)} tickers selected:** {', '.join(tickers)} | **Timeframe:** {timeframe}")
 
     col1, col2 = st.columns([1, 4])
     with col1:
         run_btn = st.button("Run Full Analysis", type="primary", use_container_width=True)
 
     if run_btn and tickers:
-        _run_analysis(tickers)
+        _run_analysis(tickers, timeframe)
     elif "analysis_results" in st.session_state:
         _display_results(st.session_state.analysis_results)
 
 
-def _run_analysis(tickers: list[str]):
+def _run_analysis(tickers: list[str], timeframe: str = "Swing Trade (1-4 weeks)"):
     from core.config import settings
     if not settings.GEMINI_API_KEY:
         st.error("GEMINI_API_KEY not configured. Go to Settings to verify.")
         return
 
-    with st.status(f"Analyzing {', '.join(tickers)}...", expanded=True) as status:
+    with st.status(f"Analyzing {', '.join(tickers)} — {timeframe}...", expanded=True) as status:
         try:
             # Step 1: PAM Engine
             st.write("Step 1/5: Running PAM engine for each ticker...")
@@ -93,9 +111,13 @@ def _run_analysis(tickers: list[str]):
             # Step 3: Chain Prompting
             st.write("Step 3/5: Running 4-step Gemini chain (Context > Analyst > Critic > Formatter)...")
             from streamlit_app.services.gemini_chain import run_chain
-            live_data = "\n".join(
-                f"{t}: ${r.current_price:.2f} | RSI: {r.rsi_14:.1f} | Vol ratio: {r.volume_ratio:.2f}x"
-                for t, r in pam_results.items()
+            live_data = (
+                f"INVESTMENT TIMEFRAME: {timeframe}\n"
+                f"Adapt entry/exit/stop sizing and thesis to this timeframe.\n\n"
+                + "\n".join(
+                    f"{t}: ${r.current_price:.2f} | RSI: {r.rsi_14:.1f} | Vol ratio: {r.volume_ratio:.2f}x"
+                    for t, r in pam_results.items()
+                )
             )
             chain_result = run_chain(retrieved_docs, pam_context, live_data, list(pam_results.keys()))
 
@@ -110,6 +132,8 @@ def _run_analysis(tickers: list[str]):
 
             result_data = {
                 "macro_context": chain_result.get("macro_context", ""),
+                "regime_classification": chain_result.get("regime_classification", {}),
+                "timeframe": timeframe,
                 "analyses": enriched,
                 "chain_audit": chain_result.get("_chain_audit", {}),
             }
@@ -271,6 +295,10 @@ def _store_ideas(analyses: list[dict], chain_result: dict):
 
 def _display_results(data: dict):
     st.divider()
+
+    # Timeframe banner
+    if data.get("timeframe"):
+        st.markdown(f"### Timeframe: {data['timeframe']}")
 
     # Regime classification
     regime = data.get("regime_classification")

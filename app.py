@@ -20,6 +20,7 @@ st.set_page_config(
 
 # ═══════════════════════════════════════════════════════════
 #  CUSTOM CSS — Professional dark terminal aesthetic
+#  NOTE: Do NOT hide header — it contains the sidebar toggle
 # ═══════════════════════════════════════════════════════════
 
 st.markdown("""
@@ -27,10 +28,24 @@ st.markdown("""
     /* Main background */
     .stApp { background-color: #0a0e14; }
 
-    /* Sidebar */
+    /* Sidebar — always visible, min width */
     [data-testid="stSidebar"] {
         background-color: #0d1117;
         border-right: 1px solid #1e2530;
+        min-width: 280px;
+    }
+
+    /* Sidebar navigation items */
+    [data-testid="stSidebar"] .stRadio > label {
+        font-size: 1rem;
+    }
+    [data-testid="stSidebar"] .stRadio > div > label {
+        padding: 8px 12px;
+        border-radius: 6px;
+        margin-bottom: 2px;
+    }
+    [data-testid="stSidebar"] .stRadio > div > label:hover {
+        background-color: #1a2332;
     }
 
     /* Cards / containers */
@@ -74,8 +89,7 @@ st.markdown("""
     /* Table styling */
     .dataframe { font-size: 0.85rem; }
 
-    /* Hide Streamlit branding but keep header for sidebar toggle */
-    #MainMenu {visibility: hidden;}
+    /* Only hide Streamlit footer — keep header for sidebar toggle */
     footer {visibility: hidden;}
 </style>
 """, unsafe_allow_html=True)
@@ -85,20 +99,41 @@ st.markdown("""
 #  SIDEBAR NAVIGATION
 # ═══════════════════════════════════════════════════════════
 
+PAGES = {
+    "Dashboard": "Dashboard — Overview",
+    "Analysis": "Analysis — AI Trade Ideas",
+    "PAM Engine": "PAM Engine — Price Action",
+    "Knowledge Base": "Knowledge Base — Documents",
+    "Journal": "Journal — Trade Log",
+    "Settings": "Settings — Config & Weights",
+}
+
 with st.sidebar:
-    st.markdown("### AlphaEdge")
-    st.caption("AI Investment Advisor v3")
+    st.markdown("## AlphaEdge")
+    st.markdown("**AI Investment Advisor**")
     st.divider()
 
     page = st.radio(
-        "Navigation",
-        ["Dashboard", "PAM Engine", "Analysis", "Knowledge Base", "Journal", "Settings"],
-        label_visibility="collapsed",
+        "Navigate to:",
+        list(PAGES.keys()),
+        format_func=lambda x: PAGES[x],
+        index=0,
     )
 
     st.divider()
-    st.caption("Powered by Gemini 3 + PAM Engine")
-    st.caption("Server-side AI only — no client exposure")
+    st.markdown("**Quick Actions**")
+    if st.button("Run Analysis", type="primary", use_container_width=True, key="sidebar_run"):
+        page = "Analysis"
+        st.session_state["_force_page"] = "Analysis"
+        st.rerun()
+
+    st.divider()
+    st.caption("Powered by Gemini 2.5 Pro + PAM Engine")
+    st.caption("6-layer signal hierarchy | 9-insight regime framework")
+
+# Handle forced page navigation from sidebar button
+if "_force_page" in st.session_state:
+    page = st.session_state.pop("_force_page")
 
 
 # ═══════════════════════════════════════════════════════════
