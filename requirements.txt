@@ -1,23 +1,23 @@
 # ── AlphaEdge v3 — Streamlit + Gemini 3 ──
 
 # Streamlit
-streamlit==1.41.0
+streamlit>=1.41.0
 
 # Google Gemini (server-side only)
 google-genai>=1.0.0
 
 # Database
-sqlalchemy==2.0.35
-psycopg2-binary==2.9.9
-pgvector==0.3.5
+sqlalchemy>=2.0.35
+psycopg2-binary>=2.9.9
+pgvector>=0.3.5
 
 # Market Data
-yfinance==0.2.43
-numpy==1.26.4
-pandas==2.2.2
+yfinance>=0.2.43
+numpy>=1.26.4
+pandas>=2.2.2
 
 # PDF extraction
-pymupdf==1.24.0
+pymupdf>=1.24.0
 
 # Environment
-python-dotenv==1.0.1
+python-dotenv>=1.0.1
