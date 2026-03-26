@@ -272,6 +272,20 @@ def _store_ideas(analyses: list[dict], chain_result: dict):
 def _display_results(data: dict):
     st.divider()
 
+    # Regime classification
+    regime = data.get("regime_classification")
+    if regime:
+        with st.expander("Regime Classification", expanded=True):
+            r1, r2, r3, r4, r5 = st.columns(5)
+            r1.metric("Liquidity", (regime.get("liquidity", "N/A")).upper())
+            r2.metric("Inflation", (regime.get("inflation", "N/A")).replace("_", " ").title())
+            r3.metric("Dollar", (regime.get("dollar", "N/A")).upper())
+            r4.metric("Fin. Conditions", (regime.get("financial_conditions", "N/A")).replace("_", " ").title())
+            divergent = regime.get("divergent_world", False)
+            r5.metric("Divergent World", "YES" if divergent else "NO")
+            if divergent:
+                st.warning("Regional divergence detected — reduced conviction on global cyclicals.")
+
     # Macro context
     if data.get("macro_context"):
         with st.expander("Macro Regime Context", expanded=True):
@@ -308,6 +322,16 @@ def _render_analysis_card(a: dict):
         s3.metric("Theme", f"{a.get('raw_theme', 50):.0f}")
         s4.metric("PAM", f"{a.get('raw_pam', 50):.0f}")
         s5.metric("Trade Type", type_label)
+
+        # Duration bucket and regime alignment
+        db_label = a.get("duration_bucket", "").replace("_", " ").title()
+        ra_label = a.get("regime_alignment", "").upper()
+        if db_label or ra_label:
+            d1, d2 = st.columns(2)
+            if db_label:
+                d1.markdown(f"**Duration Bucket:** {db_label}")
+            if ra_label:
+                d2.markdown(f"**Regime Alignment:** {ra_label}")
 
         # Thesis
         if a.get("thesis"):

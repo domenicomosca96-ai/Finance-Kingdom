@@ -28,65 +28,92 @@ def _render_signal_weighting():
     from core.config import settings
 
     st.markdown("""
-**AlphaEdge uses a 3-pillar scoring model to compute trade probability:**
+**AlphaEdge uses a 6-layer signal hierarchy mapped to 3 computational pillars:**
 
-Each trade idea receives three independent scores (0-100), which are then combined
-using configurable weights and mapped through a logistic (sigmoid) function to produce
-a final probability percentage.
+The 6 strategic layers are compressed into 3 scorable dimensions, then combined
+using configurable weights and mapped through a logistic sigmoid to produce a
+final trade probability.
 """)
 
-    st.markdown("### Current Weights")
+    st.markdown("### Signal Hierarchy (6 Layers)")
+    st.markdown("""
+| Layer | Weight | What it decides |
+|-------|--------|----------------|
+| **Global Liquidity** (Howell GLI) | 35% | Risk-on vs risk-off. Country allocation. |
+| **Sector Trends / Leadership** | 25% | Where to concentrate risk. |
+| **PAM / Price Action** | 15% | When to enter, where to invalidate. |
+| **Intermarket Confirmation** | 10% | DXY, MOVE, yield curve, breadth, credit spreads. |
+| **Fundamentals** | 10% | Quality filter, narrative coherence. |
+| **Elliott Wave** | 5% | Maturity/asymmetry map only, never a trigger. |
+""")
+
+    st.markdown("### How Layers Map to Scoring Pillars")
     w1, w2, w3 = st.columns(3)
-    w1.metric("Macro (Howell/Liquidity)", f"{settings.W_MACRO * 100:.0f}%")
-    w2.metric("Theme (Sector/Catalysts)", f"{settings.W_THEME * 100:.0f}%")
-    w3.metric("PAM (Price Action)", f"{settings.W_PAM * 100:.0f}%")
+    w1.metric("Macro Pillar", f"{settings.W_MACRO * 100:.0f}%",
+              help="Global Liquidity 35% + Intermarket 10% = 45%")
+    w2.metric("Theme Pillar", f"{settings.W_THEME * 100:.0f}%",
+              help="Sector Trends 25% + Fundamentals 10% = 35%")
+    w3.metric("PAM Pillar", f"{settings.W_PAM * 100:.0f}%",
+              help="Price Action 15% + Elliott 5% = 20%")
 
     st.markdown(f"""
-### Scoring Pipeline
+### Core Principle: LIQUIDITY > INFLATION > DOLLAR
 
-1. **Macro Score** (weight: {settings.W_MACRO}) — Gemini AI evaluates global liquidity regime
-   using the Howell framework (GLI direction, Fed net liquidity, DXY, MOVE index).
-   High score = strong liquidity tailwind for risk assets.
+1. **Liquidity** decides if you are risk-on or risk-off
+2. **Inflation** decides what TYPE of risk-on/risk-off (demand-pull vs supply-shock vs debt-deflation)
+3. **DXY** decides how favorable the global regime is (with nuance — WHY is DXY strong matters)
 
-2. **Theme Score** (weight: {settings.W_THEME}) — Gemini AI evaluates sector-specific catalysts,
-   earnings momentum, AI capex cycle positioning, and competitive dynamics.
-   High score = strong sector/thematic support.
+### Three-Layer Regime Classification
 
-3. **PAM Score** (weight: {settings.W_PAM}) — Deterministic engine (no AI) computes price action:
-   flow state, momentum, pattern detection (UC1/UR2/DR2/DC1), rotation segment (A/B/C/D).
-   This is the most heavily weighted because price doesn't lie.
+Each analysis first classifies the macro environment:
 
-### Formula
+| Layer | Options | Meaning |
+|-------|---------|---------|
+| Liquidity | Accelerating / Flat / Decelerating | From Howell GLI + regional divergence |
+| Inflation | Benign disinflation / Sweet-spot / Overheating / Stagflation / Debt-deflation | Type matters more than level |
+| Dollar | Bullish / Neutral / Bearish | With conditional logic based on WHY |
+
+### Financial Conditions Triangle
+
+```
+Yields DOWN + DXY DOWN + Commodities Stable  = SWEET SPOT (full risk-on)
+Yields UP   + DXY DOWN + Commodities UP      = REFLATION (commodities lead)
+Yields UP   + DXY UP   + Commodities UP      = STAGFLATION (gold/BTC only)
+Yields DOWN + DXY UP   + Commodities DOWN     = DEFLATION SCARE (duration up)
+```
+
+### Duration Bucket Framework
+
+Trades are classified by asset duration sensitivity:
+
+| Bucket | Assets | Favored when |
+|--------|--------|-------------|
+| Short duration / collateral | Cash, T-bills | Liquidity decelerating |
+| Medium duration defensives | Quality bonds | Deflation scare |
+| Long duration growth | Tech, growth | Liquidity accelerating + conditions easing |
+| Monetary hedges | Gold, BTC | Fiscal dominance, monetary inflation |
+| Cyclical reflation | Commodities, energy | China easing, bearish DXY |
+
+### Scoring Formula
 
 ```
 composite = (Macro x {settings.W_MACRO}) + (Theme x {settings.W_THEME}) + (PAM x {settings.W_PAM})
 probability = 100 / (1 + exp(-{settings.LOGISTIC_K} * (composite - {settings.LOGISTIC_C})))
 ```
 
-### Confidence Tiers
-| Tier | Probability | Action |
-|------|------------|--------|
-| **HIGH** | >= 72% | Full position, options eligible |
-| **MEDIUM** | >= 58% | Reduced position, stock only |
+### Confidence Tiers & Trade Types
+| Tier | Probability | Trade Type |
+|------|------------|------------|
+| **HIGH** | >= 72% | Full position + Options eligible |
+| **MEDIUM** | >= 58% | Reduced stock position only |
 | **LOW** | >= 45% | Watchlist only |
 | **NO TRADE** | < 45% | Skip |
 
-### Trade Type Logic
-- **Stock** (equity): Default for all trades. Entry/stop/target from PAM engine.
-- **Options**: Only suggested when probability >= 72% AND confirmed pattern with good R:R.
-  Options amplify returns on high-conviction setups (Bang Van matrix selects strategy).
-- **Both**: Stock + options overlay for highest conviction trades.
-
 ### Customizing Weights
-You can adjust the weights via environment variables or Streamlit secrets:
-- `W_MACRO` (default: {settings.W_MACRO})
-- `W_THEME` (default: {settings.W_THEME})
-- `W_PAM` (default: {settings.W_PAM})
-- `LOGISTIC_K` (steepness, default: {settings.LOGISTIC_K})
-- `LOGISTIC_C` (midpoint, default: {settings.LOGISTIC_C})
-
-Higher `W_PAM` = more weight on price action (recommended for swing trading).
-Higher `W_MACRO` = more weight on Howell liquidity conditions.
+Environment variables or Streamlit secrets:
+- `W_MACRO` = {settings.W_MACRO} (GLI + Intermarket)
+- `W_THEME` = {settings.W_THEME} (Sectors + Fundamentals)
+- `W_PAM` = {settings.W_PAM} (Price Action + Elliott)
 """)
 
     st.divider()

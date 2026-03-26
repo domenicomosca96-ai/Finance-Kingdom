@@ -34,10 +34,10 @@ class Settings:
     LOGISTIC_K: float = float(_get("LOGISTIC_K", "0.08"))
     LOGISTIC_C: float = float(_get("LOGISTIC_C", "55"))
 
-    # Weights
-    W_MACRO: float = float(_get("W_MACRO", "0.30"))
-    W_THEME: float = float(_get("W_THEME", "0.25"))
-    W_PAM: float = float(_get("W_PAM", "0.45"))
+    # Weights (Macro=GLI+Intermarket 45%, Theme=Sectors+Fundamentals 35%, PAM=PriceAction+Elliott 20%)
+    W_MACRO: float = float(_get("W_MACRO", "0.45"))
+    W_THEME: float = float(_get("W_THEME", "0.35"))
+    W_PAM: float = float(_get("W_PAM", "0.20"))
 
     # Risk Management
     KELLY_FRACTION: float = float(_get("KELLY_FRACTION", "0.25"))
@@ -46,8 +46,8 @@ class Settings:
     MAX_PORTFOLIO_HEAT_PCT: float = float(_get("MAX_PORTFOLIO_HEAT_PCT", "6.0"))
     PORTFOLIO_SIZE: float = float(_get("PORTFOLIO_SIZE", "100000"))
 
-    # Gemini model
-    MODEL: str = _get("GEMINI_MODEL", "gemini-2.5-flash")
+    # Gemini model (gemini-2.5-pro for highest quality financial analysis)
+    MODEL: str = _get("GEMINI_MODEL", "gemini-2.5-pro")
     EMBEDDING_MODEL: str = "models/text-embedding-004"
     EMBEDDING_DIM: int = 768
 

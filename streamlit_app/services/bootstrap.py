@@ -19,7 +19,10 @@ UPLOAD_DIR = Path(__file__).parent.parent.parent / "data" / "uploads"
 
 COLLECTION_MAP = {
     "liquidity": "macro_liquidity", "macro": "macro_liquidity", "howell": "macro_liquidity",
-    "fed": "macro_liquidity",
+    "fed": "macro_liquidity", "regime": "macro_liquidity", "gli": "macro_liquidity",
+    "inflation": "macro_liquidity", "dxy": "macro_liquidity", "dollar": "macro_liquidity",
+    "yield": "macro_liquidity", "bond": "macro_liquidity", "duration": "macro_liquidity",
+    "intermarket": "macro_liquidity", "financial-condition": "macro_liquidity",
     "trading": "trading_methods", "khoo": "trading_methods", "bang": "trading_methods",
     "method": "trading_methods", "option": "trading_methods", "strategy": "trading_methods",
     "pam": "pam_structures", "manipulation": "pam_structures", "smc": "pam_structures",
