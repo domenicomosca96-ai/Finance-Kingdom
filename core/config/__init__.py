@@ -46,8 +46,8 @@ class Settings:
     MAX_PORTFOLIO_HEAT_PCT: float = float(_get("MAX_PORTFOLIO_HEAT_PCT", "6.0"))
     PORTFOLIO_SIZE: float = float(_get("PORTFOLIO_SIZE", "100000"))
 
-    # Gemini model (gemini-2.5-pro for highest quality financial analysis)
-    MODEL: str = _get("GEMINI_MODEL", "gemini-2.5-pro")
+    # Gemini model (gemini-2.5-flash for free tier; set GEMINI_MODEL=gemini-2.5-pro if you have paid plan)
+    MODEL: str = _get("GEMINI_MODEL", "gemini-2.5-flash")
     EMBEDDING_MODEL: str = "models/text-embedding-004"
     EMBEDDING_DIM: int = 768
 

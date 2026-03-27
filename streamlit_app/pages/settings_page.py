@@ -22,6 +22,105 @@ def render():
         _render_database()
 
 
+def _render_connectivity():
+    st.subheader("Connectivity Tests")
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+        st.markdown("**Gemini API**")
+        if st.button("Test Gemini Connection", type="primary"):
+            with st.spinner("Testing Gemini API..."):
+                try:
+                    from google import genai
+                    from core.config import settings
+
+                    if not settings.GEMINI_API_KEY:
+                        st.error("GEMINI_API_KEY is not set. Add it in Streamlit secrets.")
+                    else:
+                        client = genai.Client(api_key=settings.GEMINI_API_KEY)
+                        response = client.models.generate_content(
+                            model=settings.MODEL,
+                            contents="Say 'AlphaEdge connection verified' in exactly those words.",
+                        )
+                        st.success(f"Gemini connected. Model: {settings.MODEL}")
+                        st.code(response.text[:200])
+                except Exception as e:
+                    st.error(f"Gemini connection failed: {str(e)}")
+
+    with col2:
+        st.markdown("**Database (PostgreSQL)**")
+        if st.button("Test Database Connection"):
+            with st.spinner("Testing database..."):
+                try:
+                    from core.models.database import engine
+                    from sqlalchemy import text
+
+                    with engine.connect() as conn:
+                        result = conn.execute(text("SELECT version()"))
+                        version = result.scalar()
+
+                        try:
+                            conn.execute(text("SELECT 'test'::vector(3)"))
+                            pgvector_ok = True
+                        except Exception:
+                            pgvector_ok = False
+
+                    st.success("Database connected.")
+                    st.code(version[:100] if version else "Unknown version")
+                    if pgvector_ok:
+                        st.success("pgvector extension: OK")
+                    else:
+                        st.warning("pgvector extension: NOT available (run: CREATE EXTENSION vector)")
+                except Exception as e:
+                    st.error(f"Database connection failed: {str(e)}")
+
+    st.divider()
+
+    st.markdown("**Embedding Test**")
+    if st.button("Test Gemini Embeddings"):
+        with st.spinner("Testing embedding generation..."):
+            try:
+                from google import genai
+                from google.genai import types
+                from core.config import settings
+                client = genai.Client(api_key=settings.GEMINI_API_KEY)
+                result = client.models.embed_content(
+                    model=settings.EMBEDDING_MODEL,
+                    contents="AlphaEdge test embedding",
+                    config=types.EmbedContentConfig(task_type="RETRIEVAL_DOCUMENT"),
+                )
+                emb = result.embeddings[0].values
+                st.success(f"Embedding OK — dimension: {len(emb)}")
+                st.code(f"First 5 values: {emb[:5]}")
+            except Exception as e:
+                st.error(f"Embedding test failed: {str(e)}")
+
+    st.divider()
+    st.subheader("Setup Checklist")
+    st.markdown("""
+**To get AlphaEdge fully working, you need:**
+
+1. **Gemini API Key** — Get one free at [ai.google.dev](https://ai.google.dev)
+   - Add `GEMINI_API_KEY` to your Streamlit secrets
+   - Free tier supports `gemini-2.5-flash` (default model)
+
+2. **Neon.tech Database** — Free PostgreSQL at [neon.tech](https://neon.tech)
+   - Create a project, copy the connection string
+   - Add `DATABASE_URL` to your Streamlit secrets
+   - Format: `postgresql://user:password@ep-xxx.region.aws.neon.tech/neondb?sslmode=require`
+
+3. **Streamlit Secrets** — In your app dashboard, click "Settings" > "Secrets":
+   ```toml
+   GEMINI_API_KEY = "AIzaSy..."
+   DATABASE_URL = "postgresql://neondb_owner:YOUR_PASSWORD@ep-xxx.eu-central-1.aws.neon.tech/neondb?sslmode=require"
+   ```
+
+4. **Initialize DB** — Go to Database tab > click "Initialize / Create Tables"
+5. **Bootstrap KB** — Go to Knowledge Base page > click "Bootstrap Built-in Documents"
+""")
+
+
 def _render_signal_weighting():
     st.subheader("How AlphaEdge Weights Signals")
 
@@ -84,8 +183,6 @@ Yields DOWN + DXY UP   + Commodities DOWN     = DEFLATION SCARE (duration up)
 
 ### Duration Bucket Framework
 
-Trades are classified by asset duration sensitivity:
-
 | Bucket | Assets | Favored when |
 |--------|--------|-------------|
 | Short duration / collateral | Cash, T-bills | Liquidity decelerating |
@@ -141,7 +238,6 @@ Environment variables or Streamlit secrets:
             if total_w == 0:
                 st.error("Weights cannot all be zero.")
             else:
-                # Normalize weights
                 nw_macro = tw_macro / total_w
                 nw_theme = tw_theme / total_w
                 nw_pam = tw_pam / total_w
@@ -154,82 +250,6 @@ Environment variables or Streamlit secrets:
                 tier = "HIGH" if prob >= 72 else "MEDIUM" if prob >= 58 else "LOW" if prob >= 45 else "NO TRADE"
                 r3.metric("Tier", tier)
                 st.info(f"Normalized weights: Macro={nw_macro:.2f}, Theme={nw_theme:.2f}, PAM={nw_pam:.2f}")
-
-
-
-    st.subheader("Connectivity Tests")
-
-    col1, col2 = st.columns(2)
-
-    with col1:
-        st.markdown("**Gemini API**")
-        if st.button("Test Gemini Connection", type="primary"):
-            with st.spinner("Testing Gemini API..."):
-                try:
-                    from google import genai
-                    from core.config import settings
-
-                    if not settings.GEMINI_API_KEY:
-                        st.error("GEMINI_API_KEY is not set in environment variables.")
-                    else:
-                        client = genai.Client(api_key=settings.GEMINI_API_KEY)
-                        response = client.models.generate_content(
-                            model=settings.MODEL,
-                            contents="Say 'AlphaEdge connection verified' in exactly those words.",
-                        )
-                        st.success(f"Gemini connected. Model: {settings.MODEL}")
-                        st.code(response.text[:200])
-                except Exception as e:
-                    st.error(f"Gemini connection failed: {str(e)}")
-
-    with col2:
-        st.markdown("**Database (PostgreSQL)**")
-        if st.button("Test Database Connection"):
-            with st.spinner("Testing database..."):
-                try:
-                    from core.models.database import engine
-                    from sqlalchemy import text
-
-                    with engine.connect() as conn:
-                        result = conn.execute(text("SELECT version()"))
-                        version = result.scalar()
-
-                        # Check pgvector
-                        try:
-                            conn.execute(text("SELECT 'test'::vector(3)"))
-                            pgvector_ok = True
-                        except Exception:
-                            pgvector_ok = False
-
-                    st.success(f"Database connected.")
-                    st.code(version[:100] if version else "Unknown version")
-                    if pgvector_ok:
-                        st.success("pgvector extension: OK")
-                    else:
-                        st.warning("pgvector extension: NOT available (run: CREATE EXTENSION vector)")
-                except Exception as e:
-                    st.error(f"Database connection failed: {str(e)}")
-
-    st.divider()
-
-    st.markdown("**Embedding Test**")
-    if st.button("Test Gemini Embeddings"):
-        with st.spinner("Testing embedding generation..."):
-            try:
-                from google import genai
-                from google.genai import types
-                from core.config import settings
-                client = genai.Client(api_key=settings.GEMINI_API_KEY)
-                result = client.models.embed_content(
-                    model=settings.EMBEDDING_MODEL,
-                    contents="AlphaEdge test embedding",
-                    config=types.EmbedContentConfig(task_type="RETRIEVAL_DOCUMENT"),
-                )
-                emb = result.embeddings[0].values
-                st.success(f"Embedding OK — dimension: {len(emb)}")
-                st.code(f"First 5 values: {emb[:5]}")
-            except Exception as e:
-                st.error(f"Embedding test failed: {str(e)}")
 
 
 def _render_environment():
