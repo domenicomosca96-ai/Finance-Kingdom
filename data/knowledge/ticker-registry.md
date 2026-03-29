@@ -180,6 +180,7 @@ Format: ticker | duration_bucket | best_liquidity_phases | dxy_sensitivity | pam
 - **PAM bias:** UR2 (extreme flush-reversal cycles), UC1 in crypto bull
 - **Preferred options:** Bull Bang, Back Ratio (volatility plays)
 - **Avoid conditions:** Turbulence, BTC bear market, regulatory risk spike, DXY strong from stress
+- **Key driver:** COIN follows BTC, which is primarily Fed-driven (not PBoC-driven). Don't buy COIN on PBoC easing alone
 
 ---
 
@@ -334,6 +335,7 @@ Format: ticker | duration_bucket | best_liquidity_phases | dxy_sensitivity | pam
 - **PAM bias:** UC1 in structural bull, UR2 on sharp corrections
 - **Preferred options:** Bull Bang (breakout), CBS (income during consolidation)
 - **Avoid:** Sweet-spot reflation with strong real rates (temporary headwind), risk-on Speculation where BTC dominates
+- **PBoC catalyst:** PBoC easing is a strong direct catalyst for gold (China = largest physical gold buyer + PBoC reserves accumulation); gold responds to BOTH Fed and PBoC easing, unlike BTC which primarily responds to Fed
 
 ### SMH / SOXX — Semiconductor ETFs
 - (See individual semi section above — same logic aggregated)
@@ -354,7 +356,7 @@ Format: ticker | duration_bucket | best_liquidity_phases | dxy_sensitivity | pam
 - **Duration bucket:** monetary_hedge (highest beta to liquidity)
 - **Best liquidity phases:** Speculation (peak outperformance), Rebound
 - **DXY sensitivity:** HIGH inverse (weak DXY + fiscal dominance = BTC explosive)
-- **Lead indicators:** GLI leads BTC by ~6 weeks; CN PBoC easing leads BTC by ~13 weeks
+- **Lead indicators:** GLI leads BTC by ~6 weeks; **Fed easing is the primary driver of BTC rallies** (direct USD liquidity injection → risk appetite → BTC as highest-beta expression); PBoC easing has indirect/weaker effect on BTC — PBoC benefits gold and commodities more directly
 - **PAM bias:** UR2 and UC1 both active; extreme flush/wave cycles
 - **Preferred strategy:** Spot only or regulated futures; avoid options unless on COIN stock
 - **Avoid conditions:** Turbulence + DXY spike from stress (max drawdown risk), rates spike from inflation (not from growth); debt-deflation scare

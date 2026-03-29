@@ -112,9 +112,15 @@ Chinese low inflation ≠ "bond bullish" in the simple sense. It can mean:
 
 **China-specific logic**:
 - If inflation_CN < 1% AND phase_CN in [Turbulence, Rebound] → debt-deflation risk HIGH
-- If debt-deflation risk high BUT policy easing expected → POSITIVE CONVEXITY for future commodities/BTC/gold (but not immediate broad risk-on)
+- If debt-deflation risk high BUT PBoC easing expected → POSITIVE CONVEXITY for future **commodities and gold** (China is the largest physical gold buyer and commodity importer). BTC benefits less directly from PBoC — **BTC's primary driver is Fed easing**, not PBoC. Do not conflate PBoC easing with BTC bullishness.
 
-This prevents the classic error: reading China in deflation as simple reason to buy global bonds.
+**Central Bank Easing — Asset Mapping:**
+- **Fed easing** → BTC (primary), equities, risk assets broadly
+- **PBoC easing** → Gold (primary, China = largest physical buyer), commodities (China = largest importer), materials
+
+This prevents two classic errors:
+1. Reading China deflation as simple reason to buy global bonds
+2. Reading PBoC easing as reason to buy BTC (the transmission is indirect and weaker)
 
 ---
 

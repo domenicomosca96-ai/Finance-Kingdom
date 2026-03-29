@@ -56,5 +56,33 @@
 - Increase exposure when in "zone" (win rate >60% over last 20)
 
 ---
+
+## Hard Risk Constraints (System-Enforced)
+
+These rules are enforced by the AlphaEdge system. The AI assistant MUST follow them.
+
+### Streak Management
+- **5-loss consecutive stop**: After 5 consecutive losing trades, PAUSE all new entries for 48 hours. Re-evaluate the macro regime before resuming. If the regime hasn't changed, reduce position sizing to 0.5× for the next 5 trades.
+- If stopped out twice on the SAME setup and SAME ticker, skip that setup entirely until the next regime review.
+
+### Kelly Criterion & Position Sizing
+- **Fractional Kelly (25%)**: Full Kelly = mathematically optimal but equity curve is extremely volatile. 25% fractional Kelly = much smoother equity curve with ~75% of the long-run return. NEVER exceed 25% Kelly.
+- Kelly sizing is always capped by: MAX_RISK_PER_TRADE = 2%, MAX_POSITION = 5%, MAX_PORTFOLIO_HEAT = 6%.
+- The smallest of Kelly-adjusted size and the hard caps applies.
+
+### PAM Scoring Bonus (NOT a Gate)
+- Trades with PAM_VALID = true (confirmed pattern + defined trigger/stop/target) receive a **+10 composite scoring bonus**
+- Trades WITHOUT PAM confirmation are **NOT blocked** — they simply receive no PAM bonus and are naturally deprioritized in the ranking
+- PAM confirmation increases conviction and allows tighter stops, which improves R:R and Kelly sizing
+
+### Behavioral Constraints (AI Must Follow)
+1. **Macro gate**: If macro_score < 45 → output is **WATCHLIST ONLY** regardless of PAM or theme score. No trade recommendation.
+2. **Divergent world sizing**: If divergent_world = true → reduce ALL suggested position sizes by 30%. Flag in output.
+3. **Options liquidity**: NEVER recommend options on underlyings where options_liquid = false. Convert to equity-only.
+4. **Invalidation required**: ALWAYS state the invalidation level (price that breaks the thesis) BEFORE the entry recommendation.
+5. **Liquidity alignment**: NEVER recommend a trade that goes against the primary liquidity trend direction (Howell phase). Example: do not recommend aggressive longs in Turbulence phase; do not recommend shorts in Rebound/Calm.
+6. **Correlation awareness**: If recommending multiple trades, flag correlated positions (same sector, same factor exposure) and count them as a single risk unit for portfolio heat calculation.
+
+---
 NOTE: Enhance this document by uploading your specific Adam Khoo and Bang Van PDF materials.
 The system will merge them into this collection automatically.

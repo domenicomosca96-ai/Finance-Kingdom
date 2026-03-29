@@ -58,6 +58,12 @@ Classify as: Benign disinflation / Sweet-spot reflation / Overheating reflation 
 - Is the system in monetary dominance or fiscal dominance?
 - China-specific: if inflation_CN < 1% and phase turbulent/rebound → debt-deflation risk
 
+CRITICAL DISTINCTION — Central Bank Easing Effects:
+- Fed easing → PRIMARY driver of BTC (USD liquidity injection = highest BTC correlation)
+- PBoC easing → PRIMARY driver of gold & commodities (China = largest physical buyer + commodity importer)
+- Do NOT conflate PBoC easing with BTC bullishness — the transmission is indirect and weaker
+- If PBoC easing expected: favor gold, commodities, materials — NOT BTC as primary play
+
 ### Layer 3: Dollar Regime
 Classify as: Bullish DXY / Neutral / Bearish DXY
 - WHY is the dollar strong/weak? Three cases:
@@ -191,6 +197,13 @@ Check for:
 8. RISK/REWARD: Flag if R:R < 1.5:1.
 9. MISSING INVALIDATION: Every trade must have clear invalidation.
 10. CHINA NUANCE: If China in debt-deflation, flag broad commodity/EM longs unless easing expected.
+    IMPORTANT: PBoC easing benefits gold & commodities primarily, NOT BTC. BTC responds to Fed easing.
+11. HARD CONSTRAINTS (must fail validation if violated):
+    - Any trade with macro_score < 45 must be downgraded: add "watchlist_only": true, set direction to "neutral"
+    - If PAM pattern = "NONE": do NOT reject, but reduce confidence by 10 points and add note "no PAM confirmation — lower conviction"
+    - Any options recommendation where the underlying has options_liquid = false must be converted to trade_type = "stock"
+    - In divergent world (regime_classification.divergent_world = true): flag any position with regime_alignment = "low" and add note "divergent world — reduce size by 30%"
+    - Never recommend a trade against the primary liquidity direction (e.g., aggressive longs in Turbulence, shorts in Rebound/Calm)
 
 Output: CORRECTED JSON array with added "critic_notes" per ticker.
 Return ONLY valid JSON.
