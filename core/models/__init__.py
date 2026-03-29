@@ -251,3 +251,38 @@ class AnalysisJob(Base):
     completed_at = Column(DateTime)
 
     ideas = relationship("TradeIdea", backref="job", lazy="selectin")
+
+
+# ═══════════════════════════════════════════════════════════
+#  WATCHLIST ITEMS (enhanced watchlist with metadata)
+# ═══════════════════════════════════════════════════════════
+
+class AssetClass(str, enum.Enum):
+    STOCK = "stock"
+    ETF = "etf"
+    CRYPTO = "crypto"
+
+
+class Priority(str, enum.Enum):
+    TIER1 = "tier1"
+    TIER2 = "tier2"
+    TIER3 = "tier3"
+
+
+class WatchlistItem(Base):
+    __tablename__ = "watchlist_items"
+
+    ticker = Column(String(20), primary_key=True)
+    name = Column(String(200), nullable=False)
+    asset_class = Column(String(10), nullable=False)          # stock / etf / crypto
+    sector = Column(String(100), nullable=True)
+    theme = Column(String(100), nullable=True)
+    active = Column(Boolean, default=True)
+    notes = Column(Text, nullable=True)
+    priority = Column(String(10), default="tier2")            # tier1 / tier2 / tier3
+    options_available = Column(Boolean, default=False)
+    options_liquid = Column(Boolean, default=False)
+    country = Column(String(50), nullable=True)
+    currency = Column(String(10), default="USD")
+    sensitivity_tags = Column(JSON, default=[])               # e.g. ["quality", "ai", "semis"]
+    created_at = Column(DateTime, default=datetime.utcnow)

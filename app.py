@@ -101,8 +101,10 @@ st.markdown("""
 
 PAGES = {
     "Dashboard": "Dashboard — Overview",
+    "Watchlist": "Watchlist — Control Center",
     "Analysis": "Analysis — AI Trade Ideas",
     "PAM Engine": "PAM Engine — Price Action",
+    "PAM Library": "PAM Library — Setup Catalog",
     "Knowledge Base": "Knowledge Base — Documents",
     "Journal": "Journal — Trade Log",
     "Settings": "Settings — Config & Weights",
@@ -143,11 +145,17 @@ if "_force_page" in st.session_state:
 if page == "Dashboard":
     from streamlit_app.pages.dashboard import render
     render()
-elif page == "PAM Engine":
-    from streamlit_app.pages.pam_engine import render
+elif page == "Watchlist":
+    from streamlit_app.pages.watchlist_manager import render
     render()
 elif page == "Analysis":
     from streamlit_app.pages.analysis import render
+    render()
+elif page == "PAM Engine":
+    from streamlit_app.pages.pam_engine import render
+    render()
+elif page == "PAM Library":
+    from streamlit_app.pages.pam_library import render
     render()
 elif page == "Knowledge Base":
     from streamlit_app.pages.knowledge_base import render
